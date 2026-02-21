@@ -21,6 +21,13 @@ export const SPACING = {
 };
 
 export const SHADOWS = {
+  small: {
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.08,
+    shadowRadius: 4,
+    elevation: 2,
+  },
   soft: {
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
