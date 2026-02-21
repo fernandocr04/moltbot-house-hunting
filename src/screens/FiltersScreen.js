@@ -23,6 +23,17 @@ const PRESET_FEATURES = [
   'ac', 'dishwasher', 'laundry', 'hardwood floors', 'open floor plan',
 ];
 
+const PRESET_NL = [
+  'safe neighborhood',
+  'family-friendly area',
+  'quiet street',
+  'low traffic',
+  'good natural light',
+  'open floor plan',
+  'large kitchen',
+  'move-in ready',
+];
+
 export default function FiltersScreen() {
   const [filters, setFilters] = useState([]);
   const [modal, setModal] = useState(null); // 'distance' | 'feature' | 'nl'
@@ -114,9 +125,14 @@ export default function FiltersScreen() {
 
   // ─── NL ───────────────────────────────────────────────────────────────────
 
-  async function addNlFilter() {
-    const text = nlText.trim();
+  async function addNlFilter(preset) {
+    const text = (preset ?? nlText).trim();
     if (!text) return;
+    const existing = filters.find((f) => f.type === 'nl' && f.text === text);
+    if (existing) {
+      Alert.alert('Already added', `"${text}" filter already exists.`);
+      return;
+    }
     const filter = {
       id: Date.now().toString(),
       type: 'nl',
@@ -126,7 +142,7 @@ export default function FiltersScreen() {
     };
     await saveFilter(filter);
     setNlText('');
-    setModal(null);
+    if (!preset) setModal(null);
     reload();
   }
 
@@ -320,9 +336,24 @@ export default function FiltersScreen() {
               Describe what you're looking for in plain English. Claude will evaluate each
               property against this filter using the listing description and facts.
             </Text>
+            <Text style={styles.modalSubtitle}>Quick add</Text>
+            <View style={styles.chipRow}>
+              {PRESET_NL.filter(
+                (text) => !filters.some((f) => f.type === 'nl' && f.text === text)
+              ).map((text) => (
+                <TouchableOpacity
+                  key={text}
+                  style={styles.chip}
+                  onPress={() => addNlFilter(text)}
+                >
+                  <Text style={styles.chipText}>{text}</Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+            <Text style={styles.modalSubtitle}>Custom</Text>
             <TextInput
               style={[styles.modalInput, styles.modalInputMultiline]}
-              placeholder='e.g. "good natural light", "quiet neighborhood", "large kitchen"'
+              placeholder='e.g. "good natural light", "large kitchen"'
               placeholderTextColor={COLORS.textSecondary}
               value={nlText}
               onChangeText={setNlText}
@@ -333,8 +364,8 @@ export default function FiltersScreen() {
               <TouchableOpacity style={styles.cancelBtn} onPress={() => setModal(null)}>
                 <Text style={styles.cancelBtnText}>Cancel</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.confirmBtn} onPress={addNlFilter}>
-                <Text style={styles.confirmBtnText}>Add</Text>
+              <TouchableOpacity style={styles.confirmBtn} onPress={() => addNlFilter()}>
+                <Text style={styles.confirmBtnText}>Add Custom</Text>
               </TouchableOpacity>
             </View>
           </View>

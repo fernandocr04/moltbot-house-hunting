@@ -22,6 +22,7 @@ import {
   Clock,
   ChevronLeft,
   ChevronRight,
+  Shield,
 } from 'lucide-react-native';
 
 import { getProperties, updatePropertyRating, getFilters, getSettings } from '../storage';
@@ -242,6 +243,9 @@ export default function PropertyDetailScreen({ route, navigation }) {
           </View>
         )}
 
+        {/* Neighborhood safety */}
+        <NeighborhoodSection property={property} />
+
         {/* Rating actions */}
         <View style={[styles.ratingSection, SHADOWS.small]}>
           <Text style={styles.ratingTitle}>Your take</Text>
@@ -312,6 +316,63 @@ function FilterRow({ result }) {
             {result.error ?? result.reason}
           </Text>
         )}
+      </View>
+    </View>
+  );
+}
+
+function NeighborhoodSection({ property }) {
+  const { addressParts, coordinates } = property;
+  const city = addressParts?.city ?? '';
+  const state = addressParts?.state ?? '';
+  const address = property.address ?? '';
+
+  // Best-effort URL construction — city-level safety sites
+  const citySlug = `${city.toLowerCase().replace(/\s+/g, '-')}-${state.toLowerCase()}`;
+  const encodedAddress = encodeURIComponent(address);
+
+  const links = [
+    {
+      label: 'Street View',
+      url: coordinates?.lat
+        ? `https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=${coordinates.lat},${coordinates.lng}`
+        : `https://www.google.com/maps/search/?api=1&query=${encodedAddress}&layer=c`,
+    },
+    {
+      label: 'Maps',
+      url: `https://www.google.com/maps/search/?api=1&query=${encodedAddress}`,
+    },
+    citySlug.length > 1 && {
+      label: 'AreaVibes',
+      url: `https://www.areavibes.com/${citySlug}/`,
+    },
+    citySlug.length > 1 && {
+      label: 'CrimeGrade',
+      url: `https://crimegrade.org/safest-places/in/${citySlug}/`,
+    },
+  ].filter(Boolean);
+
+  return (
+    <View style={styles.section}>
+      <View style={styles.neighborhoodHeader}>
+        <Shield size={15} color={COLORS.secondary} />
+        <Text style={styles.sectionTitle}>Neighborhood Safety</Text>
+      </View>
+      <Text style={styles.neighborhoodHint}>
+        Listing descriptions don't include crime data. Use these links to research the area directly.
+        School ratings above are a reliable proxy for neighborhood quality.
+      </Text>
+      <View style={styles.neighborhoodLinks}>
+        {links.map((link) => (
+          <TouchableOpacity
+            key={link.label}
+            style={styles.neighborhoodLink}
+            onPress={() => Linking.openURL(link.url)}
+          >
+            <ExternalLink size={13} color={COLORS.secondary} />
+            <Text style={styles.neighborhoodLinkText}>{link.label}</Text>
+          </TouchableOpacity>
+        ))}
       </View>
     </View>
   );
@@ -483,4 +544,37 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
   },
   ratingButtonLabel: { fontSize: 14, fontWeight: '600' },
+
+  // Neighborhood
+  neighborhoodHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: SPACING.sm,
+  },
+  neighborhoodHint: {
+    fontSize: 12,
+    color: COLORS.textSecondary,
+    lineHeight: 18,
+    marginBottom: SPACING.sm,
+  },
+  neighborhoodLinks: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: SPACING.sm,
+  },
+  neighborhoodLink: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    backgroundColor: COLORS.secondary + '12',
+    paddingHorizontal: 12,
+    paddingVertical: 7,
+    borderRadius: 20,
+  },
+  neighborhoodLinkText: {
+    fontSize: 13,
+    color: COLORS.secondary,
+    fontWeight: '500',
+  },
 });
